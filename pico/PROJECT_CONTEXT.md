@@ -229,3 +229,9 @@ The cleanup test deleted expired temporary videos while retaining recent, open, 
 Launched TeeOff France live on November 19, 2026 after stopping an orphaned game-input launcher that held the Pico and webcam. The new game input acquired both devices, and the browser event stream reported ready for an L1-to-L2 roll. A physical putt in this session remains pending.
 
 Updated the TeeOff France desktop launcher on November 19, 2026 to open a new Chromium window once the course responds, with xdg-open as a fallback on systems without Chromium. Started the updated launcher in the Pi desktop session. Confirmed Chromium connected to the live server and showed hole 1 with the ready status in the foreground. A physical putt remains pending.
+
+Stopped the live TeeOff France service on November 19, 2026 and confirmed that the Pico and webcam were free and port 8765 was closed. Added a left-side playing guide and a Last shot readout for speed in mph, signed angle relative to the selected aim, and speed source. On narrow screens the guide moves below the course. Hole 2 reuses the illustrated Paris border and landmarks from Hole 1 around its 45-degree lane. Previous hole is disabled on the first hole and Next hole is disabled on the last hole.
+
+Headless Chromium verified the guide layout at 1440×900 and 480×820, all four arrow keys and marker alignment, both ends of navigation, Reset on Hole 2, and a two-putt path through the dogleg. The saved physical putt replay showed 4.50 mph, 0.13 degrees left, and Pico as the source. The live game stayed stopped during verification. A live physical putt with the updated display remains pending.
+
+Restarted the updated TeeOff France course in live mode on November 19, 2026. Chromium connected, the served page included the guide and Last shot readout, and the event stream reported readiness for an L1-to-L2 roll. A physical putt remains pending.

@@ -5,40 +5,87 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mini Golf – Paris Hole</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #1d4a06; overflow: hidden; font-family: system-ui, sans-serif; }
-  #wrap { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+  html, body { margin: 0; background: #173707; color: #fff; font-family: system-ui, sans-serif; }
+  #layout { box-sizing: border-box; min-height: 100dvh; display: grid; grid-template-columns: 14.5rem minmax(0, 1fr);
+            gap: 1rem; padding: 1rem; }
+  #guide { align-self: start; padding: 1rem; background: #f8f2da; color: #25351b; border: 3px solid #141d0d;
+           border-radius: 14px; box-shadow: 0 3px 0 #111b09; }
+  #guide h2 { margin: 0 0 .55rem; font-size: 1.14rem; }
+  #guide ul { margin: 0; padding-left: 1rem; font-size: .89rem; line-height: 1.4; }
+  #guide li + li { margin-top: .5rem; }
+  #shot-readout { border-top: 1px solid #bfb89f; margin-top: .95rem; padding-top: .85rem; }
+  #shot-readout dl { display: grid; grid-template-columns: auto 1fr; gap: .28rem .55rem;
+                     align-items: baseline; margin: 0; font-size: .89rem; }
+  #shot-readout dd { margin: 0; font-weight: 750; font-variant-numeric: tabular-nums; }
+  #shot-readout p { margin: .5rem 0 0; font-size: .78rem; color: #4d5b40; }
+  #course { min-width: 0; height: calc(100dvh - 2rem); display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+            gap: .7rem; }
+  #wrap { position: relative; min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
   canvas { display: block; touch-action: none; }
-  #hud { position: fixed; left: 12px; bottom: 10px; color: #fff; font-size: 14px; text-shadow: 0 1px 2px #000;
-         display: flex; gap: 14px; align-items: center; user-select: none; }
+  #hud { font-size: 14px; display: flex; flex-wrap: wrap; gap: .55rem; align-items: center; user-select: none; }
   #hud button { font: inherit; padding: 4px 10px; border-radius: 6px; border: 1px solid #fff8; background: #0006; color: #fff; cursor: pointer; }
-  #hud button:hover { background: #000a; }
-  #score { position: fixed; top: 14px; right: 16px; left: 16px; display: flex; flex-wrap: wrap; justify-content: flex-end;
-           gap: 10px; align-items: stretch; user-select: none; pointer-events: none; }
+  #hud button:hover:not(:disabled) { background: #000a; }
+  #hud button:disabled { opacity: .55; cursor: default; }
+  #score { display: flex; flex-wrap: wrap; gap: .45rem; align-items: stretch; user-select: none; }
   #score .pill { background: #fff; border: 3px solid #000; border-radius: 12px; padding: 6px 14px; display: flex; gap: 8px;
-                 align-items: baseline; font-weight: 800; font-size: 26px; box-shadow: 0 3px 0 #000; }
+                 align-items: baseline; color: #151a12; font-weight: 800; font-size: 1.15rem; box-shadow: 0 3px 0 #000; }
   #score .lbl { font-size: 14px; letter-spacing: .08em; color: #555; }
-  #score button { font: 800 20px system-ui, sans-serif; color: #fff; border: 3px solid #000; border-radius: 12px;
-              padding: 6px 16px; cursor: pointer; box-shadow: 0 3px 0 #000; pointer-events: auto; }
+  #score button { font: 750 1rem system-ui, sans-serif; color: #fff; border: 3px solid #000; border-radius: 12px;
+                  padding: 6px 12px; cursor: pointer; box-shadow: 0 3px 0 #000; }
   #resetBtn { background: #d22f27; }
   #resetBtn:hover { background: #ea5a47; }
   #previousHoleBtn, #nextHoleBtn { background: #175c30; }
-  #previousHoleBtn:hover, #nextHoleBtn:hover { background: #227b42; }
-  #score button:active { transform: translateY(2px); box-shadow: 0 1px 0 #000; }
+  #previousHoleBtn:hover:not(:disabled), #nextHoleBtn:hover:not(:disabled) { background: #227b42; }
+  #score button:disabled { background: #535950; color: #dadeda; cursor: default; }
+  #score button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #000; }
+  @media (max-width: 850px) {
+    #layout { grid-template-columns: minmax(0, 1fr); gap: .9rem; }
+    #course { height: auto; grid-row: 1; grid-template-rows: auto auto auto; }
+    #wrap { aspect-ratio: 16 / 9; }
+    #guide { display: flex; flex-direction: column; }
+    #shot-readout { order: -1; border-top: 0; border-bottom: 1px solid #bfb89f;
+                    margin: 0 0 .85rem; padding: 0 0 .85rem; }
+  }
 </style>
 </head>
 <body>
-<div id="wrap"><canvas id="game"></canvas></div>
-<div id="score">
-  <div class="pill" role="status"><span class="lbl">HOLE</span><span id="holeNumber">1</span></div>
-  <div class="pill"><span class="lbl">SHOTS</span><span id="strokes">0</span></div>
-  <div class="pill"><span class="lbl">PAR</span><span>2</span></div>
-  <button id="resetBtn" title="Reset ball (R)">&#x21bb; Reset</button>
-  <button id="previousHoleBtn" type="button">Previous hole</button>
-  <button id="nextHoleBtn" type="button">Next hole</button>
-</div>
-<div id="hud">
-  <button id="mouseBtn" title="Toggle mouse aiming (M)">Mouse: on</button>
-  <button id="debugBtn" title="Show collision mask (D)">Debug</button>
+<div id="layout">
+  <aside id="guide" aria-labelledby="guide-title">
+    <h2 id="guide-title">How to play</h2>
+    <ul>
+      <li><strong>← / →</strong> Turn your aim 5° left or right.</li>
+      <li><strong>↑</strong> Aim toward the cup or the bend. <strong>↓</strong> Turn around.</li>
+      <li><strong>Reset (R)</strong> Return to the tee and clear the shot count.</li>
+      <li><strong>Previous / Next hole</strong> Move to the neighboring hole.</li>
+      <li id="shot-button-help" hidden></li>
+      <li><strong>Mouse (M)</strong> Toggle drag-to-putt. Pull back from the ball and release.</li>
+      <li><strong>Debug (D)</strong> Highlight collision boundaries.</li>
+    </ul>
+    <section id="shot-readout" aria-labelledby="shot-title" hidden>
+      <h2 id="shot-title">Last shot</h2>
+      <dl role="status">
+        <dt>Speed</dt><dd id="shot-speed">—</dd>
+        <dt>Angle</dt><dd id="shot-angle">—</dd>
+        <dt>Source</dt><dd id="shot-source">—</dd>
+      </dl>
+      <p>Angle is measured relative to your selected aim.</p>
+    </section>
+  </aside>
+  <main id="course" aria-label="TeeOff France">
+    <div id="score">
+      <div class="pill" role="status"><span class="lbl">HOLE</span><span id="holeNumber">1</span></div>
+      <div class="pill"><span class="lbl">SHOTS</span><span id="strokes">0</span></div>
+      <div class="pill"><span class="lbl">PAR</span><span>2</span></div>
+      <button id="resetBtn" type="button" title="Reset ball (R)">&#x21bb; Reset</button>
+      <button id="previousHoleBtn" type="button" disabled>Previous hole</button>
+      <button id="nextHoleBtn" type="button">Next hole</button>
+    </div>
+    <div id="wrap"><canvas id="game"></canvas></div>
+    <div id="hud">
+      <button id="mouseBtn" type="button" title="Toggle mouse aiming (M)">Mouse: on</button>
+      <button id="debugBtn" type="button" title="Show collision mask (D)">Debug</button>
+    </div>
+  </main>
 </div>
 
 <script>
@@ -124,6 +171,7 @@ function solidAt(x, y) {
    Game state
    ===================================================================== */
 const canvas = document.getElementById('game');
+const wrap = document.getElementById('wrap');
 const ctx = canvas.getContext('2d');
 const board = new Image(); board.src = BOARD_SRC;
 
@@ -244,10 +292,14 @@ function reset() {
 }
 
 function changeHole(step) {
-  holeIndex = (holeIndex + step + HOLES.length) % HOLES.length;
+  const selected = holeIndex + step;
+  if (selected < 0 || selected >= HOLES.length) return;
+  holeIndex = selected;
   CONFIG.START = HOLES[holeIndex].tee;
   CONFIG.HOLE = HOLES[holeIndex].cup;
   document.getElementById('holeNumber').textContent = holeIndex + 1;
+  document.getElementById('previousHoleBtn').disabled = holeIndex === 0;
+  document.getElementById('nextHoleBtn').disabled = holeIndex === HOLES.length - 1;
   reset();
 }
 
@@ -338,48 +390,38 @@ function buildMaskCanvas() {
 
 function resize() {
   const dpr = devicePixelRatio || 1;
-  const s = Math.min(innerWidth / CONFIG.BOARD_W, innerHeight / CONFIG.BOARD_H);
+  const s = Math.min(wrap.clientWidth / CONFIG.BOARD_W, wrap.clientHeight / CONFIG.BOARD_H);
   view.s = s;
   canvas.style.width = CONFIG.BOARD_W * s + 'px'; canvas.style.height = CONFIG.BOARD_H * s + 'px';
   canvas.width = Math.round(CONFIG.BOARD_W * s * dpr); canvas.height = Math.round(CONFIG.BOARD_H * s * dpr);
   ctx.setTransform(s * dpr, 0, 0, s * dpr, 0, 0);
 }
 addEventListener('resize', resize);
+new ResizeObserver(resize).observe(wrap);
 
 function drawDogleg({ tee, bend, cup, fairwayRadius }) {
-  const lawn = ctx.createLinearGradient(0, 0, 0, CONFIG.BOARD_H);
-  lawn.addColorStop(0, '#183e38');
-  lawn.addColorStop(1, '#0d2729');
-  ctx.fillStyle = lawn;
+  ctx.fillStyle = '#3c8f09';
   ctx.fillRect(0, 0, CONFIG.BOARD_W, CONFIG.BOARD_H);
-
-  // The tricolor and tower frame the putting lane.
-  for (const [index, color] of ['#3158a3', '#fff1d7', '#bd383e'].entries()) {
-    ctx.fillStyle = color;
-    ctx.fillRect(126 + index * 38, 132, 38, 54);
+  ctx.fillStyle = '#96d13b';
+  ctx.fillRect(130, 94, 1660, 904);
+  if (board.naturalWidth) {
+    // Reuse the illustrated border, rose, and Paris landmarks around the new lane.
+    ctx.drawImage(board, 0, 0, 1920, 285, 0, 0, 1920, 213);
+    ctx.drawImage(board, 0, 285, 230, 150, 0, 213, 230, 112);
+    ctx.drawImage(board, 98, 450, 252, 255, 98, 350, 252, 255);
+    ctx.drawImage(board, 180, 705, 170, 40, 180, 605, 170, 40);
+    ctx.drawImage(board, 925, 570, 995, 510, 925, 570, 995, 510);
+    // Include the Louvre pyramid while leaving the neighboring flower off the lane.
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(817, 831);
+    ctx.lineTo(980, 1058);
+    ctx.lineTo(662, 1058);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(board, 0, 0);
+    ctx.restore();
   }
-  ctx.fillStyle = '#fff1d7';
-  ctx.font = '700 56px Georgia, serif';
-  ctx.fillText('Le virage de Paris', 126, 260);
-
-  ctx.save();
-  ctx.translate(1500, 846);
-  ctx.strokeStyle = '#c5aa73';
-  ctx.lineWidth = 10;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(-124, 0);
-  ctx.quadraticCurveTo(-52, -105, -17, -305);
-  ctx.lineTo(17, -305);
-  ctx.quadraticCurveTo(52, -105, 124, 0);
-  ctx.moveTo(-79, 0);
-  ctx.quadraticCurveTo(0, -163, 79, 0);
-  ctx.moveTo(-87, -85); ctx.lineTo(87, -85);
-  ctx.moveTo(-56, -173); ctx.lineTo(56, -173);
-  ctx.moveTo(0, -305); ctx.lineTo(0, -338);
-  ctx.stroke();
-  ctx.restore();
 
   ctx.save();
   ctx.lineCap = 'round';
@@ -388,13 +430,17 @@ function drawDogleg({ tee, bend, cup, fairwayRadius }) {
   ctx.moveTo(tee.x, tee.y);
   ctx.lineTo(bend.x, bend.y);
   ctx.lineTo(cup.x, cup.y);
-  ctx.lineWidth = fairwayRadius * 2 + 18;
-  ctx.strokeStyle = debug ? '#e6584c' : '#dfca9b';
+  ctx.lineWidth = fairwayRadius * 2 + 12;
+  ctx.strokeStyle = debug ? '#fa5245' : '#1f360e';
   ctx.stroke();
   ctx.lineWidth = fairwayRadius * 2;
-  ctx.strokeStyle = '#548449';
+  ctx.strokeStyle = '#c3ea69';
   ctx.stroke();
   ctx.restore();
+
+  ctx.fillStyle = '#24440c';
+  ctx.font = 'italic 700 48px Georgia, serif';
+  ctx.fillText('Le virage de Paris', 172, 968);
 
   ctx.fillStyle = '#14271d';
   ctx.beginPath();

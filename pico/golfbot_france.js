@@ -14,16 +14,39 @@
   label.id = "golfbot-status";
   label.setAttribute("role", "status");
   label.textContent = "Connecting to the Pi…";
-  const keys = document.createElement("small");
-  keys.textContent = "←/→ Turn · ↑ Align shot · ↓ Turn around";
-  hud.append(button, label, keys);
+  hud.append(button, label);
+
+  const readout = document.getElementById("shot-readout");
+  const speedValue = document.getElementById("shot-speed");
+  const angleValue = document.getElementById("shot-angle");
+  const sourceValue = document.getElementById("shot-source");
+  if (readout) readout.hidden = false;
+
+  const shotHelp = document.getElementById("shot-button-help");
+  if (shotHelp) {
+    const name = document.createElement("strong");
+    name.textContent = button.textContent;
+    shotHelp.append(name, replay === "1" ? " Play the next saved putt." : " Play a putt if the sensors miss your roll.");
+    shotHelp.hidden = false;
+  } else {
+    const keys = document.createElement("small");
+    keys.textContent = "←/→ Turn · ↑ Align shot · ↓ Turn around";
+    hud.append(keys);
+  }
+
+  function showShot(speed = "—", angle = "—", source = "—") {
+    if (!readout) return;
+    speedValue.textContent = speed;
+    angleValue.textContent = angle;
+    sourceValue.textContent = source;
+  }
 
   const marker = document.createElement("div");
   marker.id = "golfbot-facing";
   marker.hidden = true;
   marker.setAttribute("aria-hidden", "true");
   Object.assign(marker.style, {
-    position: "fixed", width: "0", height: "0",
+    position: "absolute", width: "0", height: "0",
     pointerEvents: "none",
   });
   const arrow = document.createElement("span");
@@ -47,9 +70,8 @@
   function drawFacing() {
     if (marker.hidden) return;
     const { x, y } = game.state;
-    const rect = canvas.getBoundingClientRect();
-    marker.style.left = `${rect.left + x * rect.width / game.CONFIG.BOARD_W}px`;
-    marker.style.top = `${rect.top + y * rect.height / game.CONFIG.BOARD_H}px`;
+    marker.style.left = `${canvas.offsetLeft + x * canvas.clientWidth / game.CONFIG.BOARD_W}px`;
+    marker.style.top = `${canvas.offsetTop + y * canvas.clientHeight / game.CONFIG.BOARD_H}px`;
     marker.style.transform = `rotate(${-facingAngle()}deg)`;
   }
 
@@ -95,6 +117,7 @@
   });
   window.addEventListener("blur", stopAiming);
   window.addEventListener("resize", drawFacing);
+  new ResizeObserver(drawFacing).observe(canvas.parentElement);
   drawFacing();
 
   const events = new EventSource("/events");
@@ -113,7 +136,10 @@
 
   for (const event of ["shot", "stop", "sunk"]) {
     game.on(event, () => {
-      if (event === "shot") stopAiming();
+      if (event === "shot") {
+        stopAiming();
+        showShot("—", "—", "Mouse putt");
+      }
       updateButton();
       drawFacing();
     });
@@ -121,6 +147,7 @@
   game.on("reset", () => {
     stopAiming();
     manualFacing = null;
+    showShot();
     label.textContent = inputStatus.text;
     updateButton();
   });
@@ -157,9 +184,12 @@
       return;
     }
     const source = { beam: "Pico", camera: "camera estimate", default: "fallback" }[shot.speed_source] || "shot input";
-    const direction = shot.aim_deg === 0 ? "straight" :
-      `${Math.abs(shot.aim_deg).toFixed(2)}° ${shot.aim_deg < 0 ? "left" : "right"}`;
-    label.textContent = `${(shot.speed_mps / 0.44704).toFixed(2)} mph · ${direction} · ${source}`;
+    const speed = `${(shot.speed_mps / 0.44704).toFixed(2)} mph`;
+    const degrees = Math.abs(shot.aim_deg).toFixed(2);
+    const direction = degrees === "0.00" ? "straight" : shot.aim_deg < 0 ? "left" : "right";
+    const angleReadout = `${degrees}° ${direction}`;
+    showShot(speed, angleReadout, source);
+    label.textContent = readout ? inputStatus.text : `${speed} · ${angleReadout} · ${source}`;
     updateButton();
   });
 
