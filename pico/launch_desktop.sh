@@ -16,10 +16,19 @@ check_device() {
     fi
 }
 
+open_game_browser() {
+    local url=$1
+    if command -v chromium >/dev/null; then
+        setsid --wait chromium --new-window "$url"
+    else
+        xdg-open "$url"
+    fi
+}
+
 start_game() {
     local url='http://127.0.0.1:8765/?mouse=0'
     if curl -fsS --max-time 1 "$url" >/dev/null 2>&1; then
-        xdg-open "$url"
+        open_game_browser "$url"
         return
     fi
     check_device "${PICO_PORT:-/dev/ttyACM0}" || return 1
@@ -28,8 +37,11 @@ start_game() {
     (
         for ((attempt = 0; attempt < 20; attempt++)); do
             if curl -fsS --max-time 1 "$url" >/dev/null 2>&1; then
-                xdg-open "$url"
-                exit
+                if ! open_game_browser "$url"; then
+                    echo "Could not open the browser. Open $url on the Pi." >&2
+                    exit 1
+                fi
+                exit 0
             fi
             sleep 1
         done

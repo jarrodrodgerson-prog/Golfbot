@@ -1,0 +1,6 @@
+[Unit]
+Description=Expire local Golfbot diagnostic videos after 24 hours
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/golfbot/pico/prune_diagnostic_videos.py --days 1 --delete
