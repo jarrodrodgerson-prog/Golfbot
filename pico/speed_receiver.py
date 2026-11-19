@@ -8,34 +8,66 @@ import sys
 import time
 
 
-def save_measurement(db, line, receipt):
+def parse_measurement(line):
     try:
         event = json.loads(line)
     except (UnicodeError, ValueError):
-        return False
+        return None
     if not isinstance(event, dict) or event.get("event") != "ball_speed":
-        return False
+        return None
 
     timestamp = event.get("timestamp_ms")
     elapsed = event.get("elapsed_us")
     spacing = event.get("beam_spacing_m")
     speed = event.get("speed_mph")
     if type(timestamp) is not int or not 0 <= timestamp < 2**63:
-        return False
+        return None
     if type(elapsed) is not int or not 0 < elapsed < 2**63:
-        return False
+        return None
     for value in (spacing, speed):
         if type(value) not in (float, int) or not 0 < value <= sys.float_info.max:
-            return False
+            return None
 
+    return event
+
+
+def store_measurement(db, event, receipt):
     with db:
         db.execute(
             """INSERT INTO speed_measurements
                (received_at_utc, timestamp_ms, elapsed_us, beam_spacing_m, speed_mph)
                VALUES (?, ?, ?, ?, ?)""",
-            (receipt, timestamp, elapsed, spacing, speed),
+            (receipt, event["timestamp_ms"], event["elapsed_us"],
+             event["beam_spacing_m"], event["speed_mph"]),
         )
+
+
+def save_measurement(db, line, receipt):
+    event = parse_measurement(line)
+    if event is None:
+        return False
+    store_measurement(db, event, receipt)
     return True
+
+
+def open_database(path):
+    db = sqlite3.connect(path)
+    try:
+        with db:
+            db.execute(
+                """CREATE TABLE IF NOT EXISTS speed_measurements (
+                    id INTEGER PRIMARY KEY,
+                    received_at_utc TEXT NOT NULL,
+                    timestamp_ms INTEGER NOT NULL,
+                    elapsed_us INTEGER NOT NULL,
+                    beam_spacing_m REAL NOT NULL,
+                    speed_mph REAL NOT NULL
+                )"""
+            )
+    except sqlite3.Error:
+        db.close()
+        raise
+    return db
 
 
 def receive(db, read_line):
@@ -60,19 +92,8 @@ def main():
     parser.add_argument("--database", default="golfbot.sqlite3")
     args = parser.parse_args()
 
-    db = sqlite3.connect(args.database)
+    db = open_database(args.database)
     try:
-        with db:
-            db.execute(
-                """CREATE TABLE IF NOT EXISTS speed_measurements (
-                    id INTEGER PRIMARY KEY,
-                    received_at_utc TEXT NOT NULL,
-                    timestamp_ms INTEGER NOT NULL,
-                    elapsed_us INTEGER NOT NULL,
-                    beam_spacing_m REAL NOT NULL,
-                    speed_mph REAL NOT NULL
-                )"""
-            )
         if args.stdin:
             receive(db, sys.stdin.buffer.readline)
             return

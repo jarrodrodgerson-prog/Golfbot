@@ -3,9 +3,9 @@ from machine import Pin
 from time import sleep_us, ticks_diff, ticks_ms, ticks_us
 
 
-BEAM_SPACING_METERS = None  # Measure along the ball's path before setting.
-SENSOR_1_BLOCKED_LEVEL = None  # Set to 0 or 1 using dual_sensor_test.py.
-SENSOR_2_BLOCKED_LEVEL = None
+BEAM_SPACING_METERS = 0.2794  # 11 inches along the ball’s path.
+SENSOR_1_BLOCKED_LEVEL = 0  # GP21 observed clear at 1 and blocked at 0.
+SENSOR_2_BLOCKED_LEVEL = 0  # GP20 observed clear at 1 and blocked at 0.
 DEBOUNCE_US = 300
 REARM_US = 10_000
 TIMEOUT_US = 2_000_000
