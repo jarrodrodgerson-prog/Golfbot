@@ -3,6 +3,8 @@ set -eu
 
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 
+game_url='http://127.0.0.1:8765/?mouse=0'
+
 check_device() {
     local device=$1 ownership
     if [[ ! -c "$device" || ! -r "$device" || ! -w "$device" ]]; then
@@ -26,9 +28,8 @@ open_game_browser() {
 }
 
 start_game() {
-    local url='http://127.0.0.1:8765/?mouse=0'
-    if curl -fsS --max-time 1 "$url" >/dev/null 2>&1; then
-        open_game_browser "$url"
+    if curl -fsS --max-time 1 "$game_url" >/dev/null 2>&1; then
+        open_game_browser "$game_url"
         return
     fi
     check_device "${PICO_PORT:-/dev/ttyACM0}" || return 1
@@ -36,16 +37,16 @@ start_game() {
 
     (
         for ((attempt = 0; attempt < 20; attempt++)); do
-            if curl -fsS --max-time 1 "$url" >/dev/null 2>&1; then
-                if ! open_game_browser "$url"; then
-                    echo "Could not open the browser. Open $url on the Pi." >&2
+            if curl -fsS --max-time 1 "$game_url" >/dev/null 2>&1; then
+                if ! open_game_browser "$game_url"; then
+                    echo "Could not open the browser. Open $game_url on the Pi." >&2
                     exit 1
                 fi
                 exit 0
             fi
             sleep 1
         done
-        echo "The browser could not reach the game at $url." >&2
+        echo "The browser could not reach the game at $game_url." >&2
     ) &
     local opener=$! game_status=0
     echo "Press Ctrl+C in this terminal to stop TeeOff France."
@@ -53,6 +54,14 @@ start_game() {
     kill "$opener" 2>/dev/null || true
     wait "$opener" 2>/dev/null || true
     return "$game_status"
+}
+
+start_desktop_game() {
+    if curl -fsS --max-time 1 "$game_url" >/dev/null 2>&1; then
+        open_game_browser "$game_url"
+    else
+        systemd-run --user --unit=golfbot-france-live --collect "$PWD/launch_desktop.sh" game
+    fi
 }
 
 calibrate_camera() (
@@ -69,8 +78,9 @@ calibrate_camera() (
 
 case ${1:-} in
     game) action=start_game ;;
+    desktop-game) action=start_desktop_game ;;
     calibrate) action=calibrate_camera ;;
-    *) echo "Usage: $0 {game|calibrate}" >&2; exit 2 ;;
+    *) echo "Usage: $0 {game|desktop-game|calibrate}" >&2; exit 2 ;;
 esac
 
 if "$action"; then
