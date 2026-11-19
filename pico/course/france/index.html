@@ -98,10 +98,10 @@
 const HOLES = [
   { tee: { x: 400, y: 521 }, cup: { x: 1619, y: 521, r: 24 } },
   {
-    tee: { x: 410, y: 780 },
-    bend: { x: 850, y: 340 },
-    archEntrance: { x: 740, y: 450 },
-    cup: { x: 1450, y: 340, r: 24 },
+    tee: { x: 290, y: 780 },
+    bend: { x: 730, y: 340 },
+    archEntrance: { x: 590, y: 480 },
+    cup: { x: 1636, y: 340, r: 24 }, // Add 306 px after the bend to lengthen the route by 25%.
     fairwayRadius: 230,
   },
 ];
@@ -428,15 +428,15 @@ new ResizeObserver(resize).observe(wrap);
 
 // The original board art is cropped in source pixels, then placed on Hole 2.
 const doglegCutouts = [
-  { crop: [98, 450, 252, 295], at: [242, 748, 124],
+  { crop: [98, 450, 252, 295], at: [122, 748, 124],
     outline: 'M98 450 H350 V745 H180 V704 H98 Z' },                  // rose
-  { crop: [1087, 570, 353, 486], at: [302, 300, 213],
+  { crop: [1087, 570, 353, 486], at: [182, 300, 213],
     outline: 'M1245 570 H1273 L1310 857 L1345 866 L1330 927 L1365 979 L1440 1036 L1417 1056 H1087 V1030 L1147 999 L1174 963 L1187 932 L1187 916 L1173 875 L1182 861 H1206 L1228 758 Z' }, // Eiffel Tower
-  { crop: [662, 830, 318, 228], at: [708, 520, 250],
+  { crop: [662, 830, 318, 228], at: [636, 520, 250],
     outline: 'M817 831 L980 1058 H662 Z' },                       // Louvre pyramid
-  { crop: [1024, 47, 265, 195], at: [610, 124, 186],
+  { crop: [1024, 47, 265, 195], at: [910, 124, 186],
     outline: 'M1024 108 L1167 69 L1204 47 H1289 V242 H1024 Z' },   // café cup
-  { crop: [1638, 819, 247, 256], at: [1035, 131, 155] },          // poodle
+  { crop: [1638, 819, 247, 256], at: [1710, 270, 155] },          // poodle behind the cup
 ];
 
 function cropBoardSprite({ crop, outline }) {
@@ -505,16 +505,20 @@ function buildDogleg({ tee, bend, cup, fairwayRadius, archEntrance }) {
   }
   let portal = null;
   if (arc.naturalWidth) {
-    const width = 210;
+    const width = 315;
     const height = width * arc.height / arc.width;
-    const footDepth = 20;
-    const x = archEntrance.x - width / 2;
-    const y = archEntrance.y + footDepth / 2 - height;
-    portal = { x, y, width, height };
+    const footDepth = 30;
+    const top = footDepth / 2 - height;
+    const angle = Math.PI / 4;
+    portal = { ...archEntrance, angle, top, width, height };
     // Only the bases touch the green. The arch above them is drawn over the ball.
     const sourceDepth = footDepth * arc.height / height;
+    shape.save();
+    shape.translate(portal.x, portal.y);
+    shape.rotate(portal.angle);
     shape.drawImage(arc, 0, arc.height - sourceDepth, arc.width, sourceDepth,
-      x, y + height - footDepth, width, footDepth);
+      -width / 2, -footDepth / 2, width, footDepth);
+    shape.restore();
   }
 
   paint.fillStyle = '#183607';
@@ -584,8 +588,12 @@ function draw() {
   }
 
   if (hole.bend && dogleg?.portal) {
-    const { x, y, width, height } = dogleg.portal;
-    ctx.drawImage(arc, x, y, width, height);
+    const { x, y, angle, top, width, height } = dogleg.portal;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.drawImage(arc, -width / 2, top, width, height);
+    ctx.restore();
   }
   if (debug && (!hole.bend || dogleg)) {
     const overlay = hole.bend ? dogleg.overlay : (maskCanvas ??= buildMaskCanvas(mask));
