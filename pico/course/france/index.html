@@ -6,27 +6,28 @@
 <title>Mini Golf – Paris Hole</title>
 <style>
   html, body { margin: 0; background: #173707; color: #fff; font-family: system-ui, sans-serif; }
-  #layout { box-sizing: border-box; min-height: 100dvh; display: grid; grid-template-columns: 14.5rem minmax(0, 1fr);
+  #layout { box-sizing: border-box; min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
             gap: 1rem; padding: 1rem; }
-  #guide { align-self: start; padding: 1rem; background: #f8f2da; color: #25351b; border: 3px solid #141d0d;
+  #guide { padding: clamp(1rem, 1.4vw, 2.4rem); background: #f8f2da; color: #25351b; border: 3px solid #141d0d;
            border-radius: 14px; box-shadow: 0 3px 0 #111b09; }
-  #guide h2 { margin: 0 0 .55rem; font-size: 1.14rem; }
-  #guide ul { margin: 0; padding-left: 1rem; font-size: .89rem; line-height: 1.4; }
-  #guide li + li { margin-top: .5rem; }
+  #guide h2 { margin: 0 0 .55rem; font-size: clamp(1.14rem, 1.3vw, 1.8rem); }
+  #guide ul { margin: 0; padding-left: 1em; font-size: clamp(.89rem, 1vw, 1.3rem); line-height: 1.5; }
+  #guide li + li { margin-top: .65rem; }
   #shot-readout { border-top: 1px solid #bfb89f; margin-top: .95rem; padding-top: .85rem; }
   #shot-readout dl { display: grid; grid-template-columns: auto 1fr; gap: .28rem .55rem;
-                     align-items: baseline; margin: 0; font-size: .89rem; }
+                     align-items: baseline; margin: 0; font-size: clamp(.89rem, 1vw, 1.3rem); }
   #shot-readout dd { margin: 0; font-weight: 750; font-variant-numeric: tabular-nums; }
   #shot-readout p { margin: .5rem 0 0; font-size: .78rem; color: #4d5b40; }
-  #course { min-width: 0; height: calc(100dvh - 2rem); display: grid; grid-template-rows: auto minmax(0, 1fr) auto;
+  #course { min-width: 0; height: calc(100dvh - 2rem); display: grid; grid-template-rows: auto minmax(0, 1fr);
             gap: .7rem; }
   #wrap { position: relative; min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
   canvas { display: block; touch-action: none; }
-  #hud { font-size: 14px; display: flex; flex-wrap: wrap; gap: .55rem; align-items: center; user-select: none; }
+  #toolbar, #score, #hud { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .55rem; align-items: center; }
+  #hud { font-size: 14px; user-select: none; }
   #hud button { font: inherit; padding: 4px 10px; border-radius: 6px; border: 1px solid #fff8; background: #0006; color: #fff; cursor: pointer; }
   #hud button:hover:not(:disabled) { background: #000a; }
   #hud button:disabled { opacity: .55; cursor: default; }
-  #score { display: flex; flex-wrap: wrap; gap: .45rem; align-items: stretch; user-select: none; }
+  #score { gap: .45rem; align-items: stretch; user-select: none; }
   #score .pill { background: #fff; border: 3px solid #000; border-radius: 12px; padding: 6px 14px; display: flex; gap: 8px;
                  align-items: baseline; color: #151a12; font-weight: 800; font-size: 1.15rem; box-shadow: 0 3px 0 #000; }
   #score .lbl { font-size: 14px; letter-spacing: .08em; color: #555; }
@@ -40,7 +41,7 @@
   #score button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #000; }
   @media (max-width: 850px) {
     #layout { grid-template-columns: minmax(0, 1fr); gap: .9rem; }
-    #course { height: auto; grid-row: 1; grid-template-rows: auto auto auto; }
+    #course { height: auto; grid-row: 1; grid-template-rows: auto auto; }
     #wrap { aspect-ratio: 16 / 9; }
     #guide { display: flex; flex-direction: column; }
     #shot-readout { order: -1; border-top: 0; border-bottom: 1px solid #bfb89f;
@@ -72,19 +73,21 @@
     </section>
   </aside>
   <main id="course" aria-label="TeeOff France">
-    <div id="score">
-      <div class="pill" role="status"><span class="lbl">HOLE</span><span id="holeNumber">1</span></div>
-      <div class="pill"><span class="lbl">SHOTS</span><span id="strokes">0</span></div>
-      <div class="pill"><span class="lbl">PAR</span><span>2</span></div>
-      <button id="resetBtn" type="button" title="Reset ball (R)">&#x21bb; Reset</button>
-      <button id="previousHoleBtn" type="button" disabled>Previous hole</button>
-      <button id="nextHoleBtn" type="button">Next hole</button>
+    <div id="toolbar">
+      <div id="score">
+        <div class="pill" role="status"><span class="lbl">HOLE</span><span id="holeNumber">1</span></div>
+        <div class="pill"><span class="lbl">SHOTS</span><span id="strokes">0</span></div>
+        <div class="pill"><span class="lbl">PAR</span><span>2</span></div>
+        <button id="resetBtn" type="button" title="Reset ball (R)">&#x21bb; Reset</button>
+        <button id="previousHoleBtn" type="button" disabled>Previous hole</button>
+        <button id="nextHoleBtn" type="button">Next hole</button>
+      </div>
+      <div id="hud">
+        <button id="mouseBtn" type="button" title="Toggle mouse aiming (M)">Mouse: on</button>
+        <button id="debugBtn" type="button" title="Show collision mask (D)">Debug</button>
+      </div>
     </div>
     <div id="wrap"><canvas id="game"></canvas></div>
-    <div id="hud">
-      <button id="mouseBtn" type="button" title="Toggle mouse aiming (M)">Mouse: on</button>
-      <button id="debugBtn" type="button" title="Show collision mask (D)">Debug</button>
-    </div>
   </main>
 </div>
 
@@ -97,6 +100,7 @@ const HOLES = [
   {
     tee: { x: 410, y: 780 },
     bend: { x: 850, y: 340 },
+    archEntrance: { x: 740, y: 450 },
     cup: { x: 1450, y: 340, r: 24 },
     fairwayRadius: 230,
   },
@@ -348,10 +352,12 @@ window.MiniGolf = {
 /* =====================================================================
    Mouse / touch controls (drag back from the ball, release to putt)
    ===================================================================== */
-let view = { s: 1, ox: 0, oy: 0 };
 function toBoard(e) {
   const r = canvas.getBoundingClientRect();
-  return { x: (e.clientX - r.left) / view.s, y: (e.clientY - r.top) / view.s };
+  return {
+    x: (e.clientX - r.left) * CONFIG.BOARD_W / r.width,
+    y: (e.clientY - r.top) * CONFIG.BOARD_H / r.height,
+  };
 }
 canvas.addEventListener('pointerdown', e => {
   if (!CONFIG.MOUSE_ENABLED || ball.sunk || (CONFIG.ONLY_SHOOT_WHEN_STOPPED && ball.moving)) return;
@@ -406,11 +412,16 @@ function buildMaskCanvas(collisionMask) {
 
 function resize() {
   const dpr = devicePixelRatio || 1;
-  const s = Math.min(wrap.clientWidth / CONFIG.BOARD_W, wrap.clientHeight / CONFIG.BOARD_H);
-  view.s = s;
-  canvas.style.width = CONFIG.BOARD_W * s + 'px'; canvas.style.height = CONFIG.BOARD_H * s + 'px';
-  canvas.width = Math.round(CONFIG.BOARD_W * s * dpr); canvas.height = Math.round(CONFIG.BOARD_H * s * dpr);
-  ctx.setTransform(s * dpr, 0, 0, s * dpr, 0, 0);
+  const width = wrap.clientWidth;
+  const height = Math.min(wrap.clientHeight, width * CONFIG.BOARD_H / CONFIG.BOARD_W);
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+  const pixelWidth = Math.round(width * dpr);
+  const pixelHeight = Math.round(height * dpr);
+  if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+  if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
+  ctx.setTransform(canvas.width / CONFIG.BOARD_W, 0, 0, canvas.height / CONFIG.BOARD_H, 0, 0);
+  draw();
 }
 addEventListener('resize', resize);
 new ResizeObserver(resize).observe(wrap);
@@ -423,7 +434,7 @@ const doglegCutouts = [
     outline: 'M1245 570 H1273 L1310 857 L1345 866 L1330 927 L1365 979 L1440 1036 L1417 1056 H1087 V1030 L1147 999 L1174 963 L1187 932 L1187 916 L1173 875 L1182 861 H1206 L1228 758 Z' }, // Eiffel Tower
   { crop: [662, 830, 318, 228], at: [708, 520, 250],
     outline: 'M817 831 L980 1058 H662 Z' },                       // Louvre pyramid
-  { crop: [1024, 47, 265, 195], at: [610, 152, 186],
+  { crop: [1024, 47, 265, 195], at: [610, 124, 186],
     outline: 'M1024 108 L1167 69 L1204 47 H1289 V242 H1024 Z' },   // café cup
   { crop: [1638, 819, 247, 256], at: [1035, 131, 155] },          // poodle
 ];
@@ -451,7 +462,7 @@ function cropBoardSprite({ crop, outline }) {
   return sprite;
 }
 
-function buildDogleg({ tee, bend, cup, fairwayRadius }) {
+function buildDogleg({ tee, bend, cup, fairwayRadius, archEntrance }) {
   const art = document.createElement('canvas');
   art.width = CONFIG.BOARD_W;
   art.height = CONFIG.BOARD_H;
@@ -487,11 +498,23 @@ function buildDogleg({ tee, bend, cup, fairwayRadius }) {
   const sprites = board.naturalWidth
     ? doglegCutouts.map(part => ({ sprite: cropBoardSprite(part), at: part.at }))
     : [];
-  if (arc.naturalWidth) sprites.push({ sprite: arc, at: [1260, 382, 176] });
   // Stamp the same silhouettes into the artwork and the physics layer.
   for (const { sprite, at: [x, y, width] } of sprites) {
     const height = width * sprite.height / sprite.width;
     for (const layer of [paint, shape]) layer.drawImage(sprite, x, y, width, height);
+  }
+  let portal = null;
+  if (arc.naturalWidth) {
+    const width = 210;
+    const height = width * arc.height / arc.width;
+    const footDepth = 20;
+    const x = archEntrance.x - width / 2;
+    const y = archEntrance.y + footDepth / 2 - height;
+    portal = { x, y, width, height };
+    // Only the bases touch the green. The arch above them is drawn over the ball.
+    const sourceDepth = footDepth * arc.height / height;
+    shape.drawImage(arc, 0, arc.height - sourceDepth, arc.width, sourceDepth,
+      x, y + height - footDepth, width, footDepth);
   }
 
   paint.fillStyle = '#183607';
@@ -513,7 +536,7 @@ function buildDogleg({ tee, bend, cup, fairwayRadius }) {
   const pixels = shape.getImageData(0, 0, MASK_W, MASK_H).data;
   const collisionMask = new Uint8Array(MASK_W * MASK_H);
   for (let i = 0; i < collisionMask.length; i++) collisionMask[i] = pixels[i * 4 + 3] >= 128;
-  return { art, mask: collisionMask, overlay: buildMaskCanvas(collisionMask) };
+  return { art, mask: collisionMask, overlay: buildMaskCanvas(collisionMask), portal };
 }
 
 Promise.allSettled([board.decode(), arc.decode()]).then(() => {
@@ -528,15 +551,6 @@ function draw() {
   } else if (board.naturalWidth) {
     ctx.drawImage(board, 0, 0, CONFIG.BOARD_W, CONFIG.BOARD_H);
   }
-  if (debug && (!hole.bend || dogleg)) {
-    const overlay = hole.bend ? dogleg.overlay : (maskCanvas ??= buildMaskCanvas(mask));
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(overlay, 0, 0, CONFIG.BOARD_W, CONFIG.BOARD_H);
-    ctx.imageSmoothingEnabled = true;
-    const H = CONFIG.HOLE; ctx.strokeStyle = '#ff0'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(H.x, H.y, H.r, 0, Math.PI * 2); ctx.stroke();
-  }
-
   // aim guide
   if (aim && CONFIG.MOUSE_ENABLED) {
     const p = aimParams(), a = p.angle * Math.PI / 180, frac = p.speed / CONFIG.MAX_SPEED;
@@ -567,6 +581,19 @@ function draw() {
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.arc(bx, by, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#ddd'; ctx.beginPath(); ctx.arc(bx + r * 0.3, by + r * 0.3, r * 0.45, 0, Math.PI * 2); ctx.fill();
+  }
+
+  if (hole.bend && dogleg?.portal) {
+    const { x, y, width, height } = dogleg.portal;
+    ctx.drawImage(arc, x, y, width, height);
+  }
+  if (debug && (!hole.bend || dogleg)) {
+    const overlay = hole.bend ? dogleg.overlay : (maskCanvas ??= buildMaskCanvas(mask));
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(overlay, 0, 0, CONFIG.BOARD_W, CONFIG.BOARD_H);
+    ctx.imageSmoothingEnabled = true;
+    const H = CONFIG.HOLE; ctx.strokeStyle = '#ff0'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(H.x, H.y, H.r, 0, Math.PI * 2); ctx.stroke();
   }
 
   drawParticles();

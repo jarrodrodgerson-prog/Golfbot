@@ -70,9 +70,13 @@
   function drawFacing() {
     if (marker.hidden) return;
     const { x, y } = game.state;
-    marker.style.left = `${canvas.offsetLeft + x * canvas.clientWidth / game.CONFIG.BOARD_W}px`;
-    marker.style.top = `${canvas.offsetTop + y * canvas.clientHeight / game.CONFIG.BOARD_H}px`;
-    marker.style.transform = `rotate(${-facingAngle()}deg)`;
+    const scaleX = canvas.clientWidth / game.CONFIG.BOARD_W;
+    const scaleY = canvas.clientHeight / game.CONFIG.BOARD_H;
+    const angle = -facingAngle() * Math.PI / 180;
+    const screenAngle = Math.atan2(Math.sin(angle) * scaleY, Math.cos(angle) * scaleX);
+    marker.style.left = `${canvas.offsetLeft + x * scaleX}px`;
+    marker.style.top = `${canvas.offsetTop + y * scaleY}px`;
+    marker.style.transform = `rotate(${screenAngle}rad)`;
   }
 
   function stopAiming() {
